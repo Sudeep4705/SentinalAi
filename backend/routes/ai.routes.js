@@ -28,50 +28,27 @@ const groq = new Groq({
 
 router.post("/ai-summary", async (req, res) => {
   try {
-    const { events } = req.body;
-    const repeated = tools["checkRepeatedEvents"](events)
-    // console.log(repeated)
-
-    const nightEvents = tools["findNightEvent"](events)
-    // console.log(nightEvents);
+    const { events } = req.body;   
     
     const formattedEvents =  events.map((e=> `${e.type} at ${new Date(e.timestamp).toLocaleString()}`)).join("\n")
-  
-    
-  console.log(Object.values(repeated));
-    const isSuspicious = Object.values(repeated).some(count=>count > 3) || nightEvents.length>0
-    // console.log(isSuspicious);
-    
+const prompt = `
+You are an AI security analyst.
 
+You have access to these tools:
+- checkRepeatedEvents → counts repeated event types
+- findNightEvents → finds events between 12 AM and 6 AM
 
-const normalPrompt = `
-You are a security analyst.
+Instructions:
+- First decide if you need a tool
+- If needed, respond ONLY like this:
+
+TOOL: tool_name
+
+- If no tool is needed, give final answer directly
+
 Events:
 ${formattedEvents}
-
-This looks like normal activity.
-
-Give a short explanation.
 `;
-
-const suspiciousPrompt  = `You are a security analyst for an industrial site.
-    Analyze the following overnight events and provide:
-
-   
-
-   1. What happened
-   2. Whether it is suspicious or normal
-   3. What needs attention or action
-
-   Events:
-   ${formattedEvents}
-
-   Events Counts:${JSON.stringify(repeated)} 
-
-   Night Events:
-   ${JSON.stringify(nightEvents)}
-    `;
-const prompt = isSuspicious ? suspiciousPrompt : normalPrompt
   const response = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [ 
