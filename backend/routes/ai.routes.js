@@ -2,16 +2,22 @@ const express = require("express")
 const router = express.Router()
 
 
-function checkRepeatedEvents(events){
+const tools = {
+   checkRepeatedEvents : (events)=>{
   const count = {};
   events.forEach(e => {
-    count[e.type] = (count[e.type]| 0) +1
+    count[e.type] = (count[e.type] || 0) +1
   });
   return count
+},
+
+findNightEvent :(events)=>{
+  return events.filter(e=>{
+    const hour = new Date(e.timestamp).getHours()
+    return hour >=0 && hour < 6;
+  });
 }
-
-
-
+}
 
 
 
@@ -19,22 +25,53 @@ const Groq = require("groq-sdk");
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
+
 router.post("/ai-summary", async (req, res) => {
   try {
     const { events } = req.body;
-    const formattedevents =  events.map((e=> `${e.type} at ${new Date(e.timestamp).toLocaleString()}`)).join("\n")
+    const repeated = tools["checkRepeatedEvents"](events)
+    // console.log(repeated)
+
+    const nightEvents = tools["findNightEvent"](events)
+    // console.log(nightEvents);
+    
+    const formattedEvents =  events.map((e=> `${e.type} at ${new Date(e.timestamp).toLocaleString()}`)).join("\n")
+  
+    
+  console.log(Object.values(repeated));
+    const isSuspicious = Object.values(repeated).some(count=>count > 3) || nightEvents.length>0
+    // console.log(isSuspicious);
+    
 
 
-    const prompt = `You are a security analyst for an industrial site.
+const normalPrompt = `
+You are a security analyst.
+Events:
+${formattedEvents}
+
+This looks like normal activity.
+
+Give a short explanation.
+`;
+
+const suspiciousPrompt  = `You are a security analyst for an industrial site.
     Analyze the following overnight events and provide:
+
+   
 
    1. What happened
    2. Whether it is suspicious or normal
    3. What needs attention or action
-   Events:
-   ${formattedevents}
-    `;
 
+   Events:
+   ${formattedEvents}
+
+   Events Counts:${JSON.stringify(repeated)} 
+
+   Night Events:
+   ${JSON.stringify(nightEvents)}
+    `;
+const prompt = isSuspicious ? suspiciousPrompt : normalPrompt
   const response = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [ 
@@ -42,7 +79,7 @@ router.post("/ai-summary", async (req, res) => {
       ]
     });
 
-    console.log(response);
+    // console.log(response);
     res.json({summary:response.choices[0].message.content})
 
   } catch (err) {

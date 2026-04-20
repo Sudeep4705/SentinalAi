@@ -1,10 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import UserLayout from "./Layouts/UserLayout"
 import Events from "./Pages/Events"
-
-function App() {
-
-
+function App(){
   return (
     <>
      <BrowserRouter>
@@ -17,5 +14,4 @@ function App() {
     </>
   )
 }
-
 export default App

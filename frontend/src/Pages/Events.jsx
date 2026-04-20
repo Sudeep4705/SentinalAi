@@ -3,13 +3,9 @@ import { useState } from "react"
 import axios from "axios"
 import Mapview from "./Mapview"
 
-
-
 export default function Events(){
-
     const [events,setevents]=useState([])
-    const [summary,setsummary] = useState({})
-
+    const [summary,setsummary] = useState("")
 useEffect(() => {
   const fetchEvents = async () => {
     try {
@@ -21,10 +17,8 @@ useEffect(() => {
       console.error(err);
     }
   };
-
   fetchEvents();
 }, []);  
-
     const generateSummary = async()=>{
       let res = await axios.post("http://localhost:8333/ai/ai-summary",{events},{withCredentials:true})
       setsummary(res.data.summary)
@@ -39,9 +33,10 @@ useEffect(() => {
             <p>location: {event.location.lat},{event.location.lng}</p>
         </div>
       ))}
+    
       <Mapview events={events}/>
-      {summary}
       <button onClick={generateSummary} className="bg-amber-200">getSummary</button>
+        {summary}
     </>
   )
 }
