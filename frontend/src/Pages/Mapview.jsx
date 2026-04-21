@@ -3,7 +3,7 @@ import { Polyline } from "react-leaflet";
 
 
 export default function Mapview({events,isSuspicious}) {
-const path = lastEvents.map(e => [
+const path = events.map(e => [
   Number(e.location.lat),
   Number(e.location.lng)
 ]);
