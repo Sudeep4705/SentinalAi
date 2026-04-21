@@ -7,7 +7,7 @@ const tools = {
     return count;
   },
 
-  findNightEvent: (events) => {
+  findNightEvents: (events) => {
     return events.filter((e) => {
       const hour = new Date(e.timestamp).getHours();
       return hour >= 0 && hour < 6;
@@ -79,7 +79,7 @@ Return ONLY JSON:
 
 {
   "whatHappened": "...",
-  "isSuspicious":"Explain briefly why it is suspicious or normal",
+  "isSuspicious":"yes or no, followed by a brief reason. Must start with 'yes' or 'no'.",
   "actionNeeded": "..."
 }
 `,

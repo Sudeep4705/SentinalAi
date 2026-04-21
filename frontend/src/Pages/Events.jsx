@@ -11,7 +11,7 @@ import "@fontsource/inter/700.css";
 
 export default function Events() {
   const [events, setevents] = useState([]);
-  const [summary, setsummary] = useState("");
+  const [summary, setsummary] = useState({});
   const [decision, setdecision] = useState("");
 
   useEffect(() => {
@@ -28,17 +28,17 @@ export default function Events() {
     fetchEvents();
   }, []);
 
-  const generateSummary = async () => {
+  const generateSummary = async (eventsData) => {
     let res = await axios.post(
       "https://sentinalai-kcx4.onrender.com/ai/ai-summary",
-      { events },
+      { events:eventsData },
       { withCredentials: true },
     );
     setsummary(res.data.message);
   };
 
   useEffect(() => {
-    if (events.length > 0) generateSummary();
+    if (events.length > 0) generateSummary(events);
   }, [events]);
 
   const isSuspicious = summary?.isSuspicious?.toLowerCase().includes("yes");
