@@ -1,5 +1,4 @@
-import { useEffect } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import Mapview from "./Mapview";
 import { Drone } from "lucide-react";
@@ -13,6 +12,7 @@ export default function Events() {
   const [events, setevents] = useState([]);
   const [summary, setsummary] = useState({});
   const [decision, setdecision] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -23,18 +23,24 @@ export default function Events() {
         setevents(res.data);
       } catch (err) {
         console.error(err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchEvents();
   }, []);
 
   const generateSummary = async (eventsData) => {
-    let res = await axios.post(
-      "https://sentinalai-kcx4.onrender.com/ai/ai-summary",
-      { events:eventsData },
-      { withCredentials: true },
-    );
-    setsummary(res.data.message);
+    try {
+      const res = await axios.post(
+        "https://sentinalai-kcx4.onrender.com/ai/ai-summary",
+        { events: eventsData },
+        { withCredentials: true }
+      );
+      setsummary(res.data.message);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   useEffect(() => {
@@ -42,6 +48,17 @@ export default function Events() {
   }, [events]);
 
   const isSuspicious = summary?.isSuspicious?.toLowerCase().includes("yes");
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f0]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-6 h-6 border-2 border-[#4a7c59] border-t-transparent rounded-full animate-spin" />
+          <p className="text-[13px] text-[#888]">Loading overnight report...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f7f5f0] text-[#1a1a1a]" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -86,6 +103,24 @@ export default function Events() {
           </h1>
         </motion.div>
 
+        {/* Escalation Banner */}
+        {summary?.needsEscalation && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.35 }}
+            className="flex items-center gap-4 bg-red-50 border border-red-200 rounded-xl px-5 py-4"
+          >
+            <div className="w-9 h-9 rounded-lg bg-red-100 flex items-center justify-center">
+              <span className="text-red-500 text-lg">🚨</span>
+            </div>
+            <div>
+              <p className="text-[13px] font-semibold text-red-500">Escalation Required</p>
+              <p className="text-[12px] text-red-400 mt-0.5">This incident needs immediate attention</p>
+            </div>
+          </motion.div>
+        )}
+
         {/* Drone Alert */}
         {isSuspicious && (
           <motion.div
@@ -99,7 +134,7 @@ export default function Events() {
             </div>
             <div>
               <p className="text-[13px] font-semibold text-[#c47f00]">Drone Patrol Dispatched</p>
-              <p className="text-[12px] text-[#a07820] mt-0.5">Suspicious activity detected aerial scan initiated</p>
+              <p className="text-[12px] text-[#a07820] mt-0.5">Suspicious activity detected — aerial scan initiated</p>
             </div>
           </motion.div>
         )}
@@ -123,8 +158,11 @@ export default function Events() {
                   <span className="text-[11px] text-[#bbb]">#{String(key + 1).padStart(2, "0")}</span>
                 </div>
                 <p className="text-[13px] text-[#555] mb-1">{event.timestamp}</p>
+                {event.zone && (
+                  <p className="text-[12px] text-[#4a7c59] font-medium mb-1">📍 {event.zone}</p>
+                )}
                 <p className="text-[12px] text-[#aaa] font-mono">
-                  {event.location.lat}, {event.location.lng}
+                  {event.location?.lat}, {event.location?.lng}
                 </p>
               </motion.div>
             ))}
@@ -153,6 +191,7 @@ export default function Events() {
           </div>
 
           <div className="px-6 py-5 flex flex-col gap-5">
+
             <div>
               <p className="text-[11px] uppercase tracking-widest text-[#a0997e] font-medium mb-1.5">What Happened</p>
               <p className="text-[14px] text-[#444] leading-relaxed">{summary.whatHappened}</p>
@@ -162,9 +201,7 @@ export default function Events() {
 
             <div>
               <p className="text-[11px] uppercase tracking-widest text-[#a0997e] font-medium mb-1.5">Suspicious or Normal</p>
-              <p className={`text-[14px] font-semibold leading-relaxed ${
-                isSuspicious ? "text-red-500" : "text-[#4a7c59]"
-              }`}>
+              <p className={`text-[14px] font-semibold leading-relaxed ${isSuspicious ? "text-red-500" : "text-[#4a7c59]"}`}>
                 {summary?.isSuspicious}
               </p>
             </div>
@@ -175,15 +212,41 @@ export default function Events() {
               <p className="text-[11px] uppercase tracking-widest text-[#a0997e] font-medium mb-1.5">Action Needed</p>
               <p className="text-[14px] text-[#444] leading-relaxed">{summary.actionNeeded}</p>
             </div>
+
+            <div className="border-t border-[#f0ece4]" />
+
+            {/* Confidence */}
+            <div>
+              <p className="text-[11px] uppercase tracking-widest text-[#a0997e] font-medium mb-1.5">Confidence</p>
+              <span className={`text-[12px] font-semibold px-2.5 py-1 rounded-full ${
+                summary.confidence === "high" ? "bg-[#eef5eb] text-[#4a7c59]" :
+                summary.confidence === "medium" ? "bg-[#fff8ed] text-[#c47f00]" :
+                "bg-red-50 text-red-400"
+              }`}>
+                {summary.confidence || "unknown"}
+              </span>
+            </div>
+
+            {/* Unclear Points */}
+            {summary?.unclearPoints?.length > 0 && (
+              <>
+                <div className="border-t border-[#f0ece4]" />
+                <div>
+                  <p className="text-[11px] uppercase tracking-widest text-[#a0997e] font-medium mb-1.5">Unclear Points</p>
+                  {summary.unclearPoints.map((point, i) => (
+                    <p key={i} className="text-[13px] text-[#888] mb-1">• {point}</p>
+                  ))}
+                </div>
+              </>
+            )}
+
           </div>
 
           <div className="flex items-center gap-3 px-6 py-4 bg-[#faf8f5] border-t border-[#f0ece4]">
             <button
               onClick={() => setdecision("Approved")}
               className={`text-[13px] font-medium px-4 py-2 rounded-lg transition-all duration-150 cursor-pointer ${
-                decision === "Approved"
-                  ? "bg-[#4a7c59] text-white"
-                  : "bg-[#eef5eb] text-[#4a7c59] hover:bg-[#ddeedd]"
+                decision === "Approved" ? "bg-[#4a7c59] text-white" : "bg-[#eef5eb] text-[#4a7c59] hover:bg-[#ddeedd]"
               }`}
             >
               Approve
@@ -191,9 +254,7 @@ export default function Events() {
             <button
               onClick={() => setdecision("Rejected")}
               className={`text-[13px] font-medium px-4 py-2 rounded-lg transition-all duration-150 cursor-pointer ${
-                decision === "Rejected"
-                  ? "bg-red-500 text-white"
-                  : "bg-red-50 text-red-400 hover:bg-red-100"
+                decision === "Rejected" ? "bg-red-500 text-white" : "bg-red-50 text-red-400 hover:bg-red-100"
               }`}
             >
               Reject

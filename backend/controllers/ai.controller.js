@@ -8,10 +8,12 @@ const tools = {
     return events.filter((e) => new Date(e.timestamp).getHours() < 6);
   },
   getEventByZone: (events, zone) => events.filter((e) => e.zone === zone),
+
   flagForEscalation: (events) => {
     const risky = events.filter(e => ["TRESSPASSING","FENCE_ALERT","BADGE_FAIL"].includes(e.type));
     return { shouldEscalate: risky.length >= 2, count: risky.length };
   },
+  
   getFailedBadgeSwipes: (events) => events.filter(e => e.type === "BADGE_FAIL"),
 };
 
