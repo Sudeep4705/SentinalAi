@@ -1,115 +1,73 @@
 const tools = {
   checkRepeatedEvents: (events) => {
     const count = {};
-    events.forEach((e) => {
-      count[e.type] = (count[e.type] || 0) + 1;
-    });
+    events.forEach((e) => { count[e.type] = (count[e.type] || 0) + 1; });
     return count;
   },
-
   findNightEvents: (events) => {
-    return events.filter((e) => {
-      const hour = new Date(e.timestamp).getHours();
-      return hour >= 0 && hour < 6;
-    });
+    return events.filter((e) => new Date(e.timestamp).getHours() < 6);
   },
+  getEventByZone: (events, zone) => events.filter((e) => e.zone === zone),
+  flagForEscalation: (events) => {
+    const risky = events.filter(e => ["TRESSPASSING","FENCE_ALERT","BADGE_FAIL"].includes(e.type));
+    return { shouldEscalate: risky.length >= 2, count: risky.length };
+  },
+  getFailedBadgeSwipes: (events) => events.filter(e => e.type === "BADGE_FAIL"),
 };
 
 const Groq = require("groq-sdk");
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 module.exports.Aiprompt = async (req, res) => {
   try {
     const { events } = req.body;
-    const formattedEvents = events
-      .map((e) => `${e.type} at ${new Date(e.timestamp).toLocaleString()}`)
-      .join("\n");
-    const prompt = `
-You are an AI security analyst.
 
-You have access to these tools:
-- checkRepeatedEvents → counts repeated event types
-- findNightEvents → finds events between 12 AM and 6 AM
+    const messages = [
+      {
+        role: "system",
+        content: `You are a security analyst. You have these tools:
+- checkRepeatedEvents
+- findNightEvents  
+- getEventByZone
+- flagForEscalation
+- getFailedBadgeSwipes
 
-Instructions:
-- First decide if you need a tool
-- If needed, respond ONLY like this:
-
-TOOL: tool_name
-
-- If no tool is needed, give final answer directly
-
-Events:
-${formattedEvents}
-
-IMPORTANT:
-- If events look repeated, you MUST call checkRepeatedEvents
-- Do NOT manually count events from text
-- Use tools for accuracy
-`;
-    const response = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [{ role: "user", content: prompt }],
-    });
-    const airesponse = response.choices[0].message.content;
-    if (airesponse.startsWith("TOOL:")) {
-      const toolname = airesponse.split("TOOL:")[1].trim();
-      const toolResult = tools[toolname](events);
-      const secondResponse = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          { role: "user", content: prompt },
-          { role: "assistant", content: airesponse },
-          {
-            role: "user",
-            content: `
-You MUST use this tool result strictly.
-
-Tool Result:
-${JSON.stringify(toolResult)}
-
-Instructions:
-- Do NOT assume anything outside this data
-- Explain WHY it is suspicious or normal
-- Give a short reasoning sentence (not yes/no)
-
-Return ONLY JSON:
-
-{
-  "whatHappened": "...",
-  "isSuspicious":"yes or no, followed by a brief reason. Must start with 'yes' or 'no'.",
-  "actionNeeded": "..."
-}
-`,
-          },
-        ],
-      });
-      const content = secondResponse.choices[0].message.content;
-
-      let result;
-      try {
-        result = JSON.parse(content);
-      } catch {
-        result = {
-          whatHappened: content,
-          isSuspicious: "Unknown",
-          actionNeeded: "Manual review required",
-        };
+To use a tool write: TOOL: toolName
+When done write ONLY JSON: { "whatHappened":"...", "isSuspicious":"yes/no because...", "actionNeeded":"...", "needsEscalation": true/false }`
+      },
+      {
+        role: "user",
+        content: `Investigate: ${JSON.stringify(events)}`
       }
-      res.json({ message: result });
-    } else {
-      res.json({
-        message: {
-          whatHappened: airesponse,
-          isSuspicious: "Unknown",
-          actionNeeded: "No tool used",
-        },
+    ];
+
+    let result = null;
+
+    for (let i = 0; i < 5; i++) {
+      const response = await groq.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        messages
       });
+
+      const aiText = response.choices[0].message.content.trim();
+      messages.push({ role: "assistant", content: aiText });
+
+      if (aiText.startsWith("TOOL:")) {
+        const toolName = aiText.replace("TOOL:", "").trim();
+        const toolResult = tools[toolName] ? tools[toolName](events) : { error: "tool not found" };
+        messages.push({ role: "user", content: `Result: ${JSON.stringify(toolResult)}. Continue or give final JSON.` });
+      } else {
+        try {
+          result = JSON.parse(aiText.replace(/```json|```/g, "").trim());
+          break;
+        } catch {
+          messages.push({ role: "user", content: "Return ONLY valid JSON, nothing else." });
+        }
+      }
     }
+    res.json({ message: result || { whatHappened: "Could not complete", isSuspicious: "unknown", actionNeeded: "Manual review" } });
+
   } catch (err) {
-    console.log(err);
     res.status(500).json({ error: err.message });
   }
 };
