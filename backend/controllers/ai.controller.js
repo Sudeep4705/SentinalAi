@@ -72,14 +72,14 @@ ${JSON.stringify(toolResult)}
 
 Instructions:
 - Do NOT assume anything outside this data
-- Do NOT guess counts
-- Base your answer ONLY on tool result
+- Explain WHY it is suspicious or normal
+- Give a short reasoning sentence (not yes/no)
 
 Return ONLY JSON:
 
 {
   "whatHappened": "...",
-  "isSuspicious": "...",
+  "isSuspicious":"Explain briefly why it is suspicious or normal",
   "actionNeeded": "..."
 }
 `,
