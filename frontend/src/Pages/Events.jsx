@@ -17,7 +17,7 @@ export default function Events() {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const res = await axios.get("http://localhost:8333/event/events", {
+        const res = await axios.get("https://sentinalai-kcx4.onrender.com/event/events", {
           withCredentials: true,
         });
         setevents(res.data);
@@ -30,7 +30,7 @@ export default function Events() {
 
   const generateSummary = async () => {
     let res = await axios.post(
-      "http://localhost:8333/ai/ai-summary",
+      "https://sentinalai-kcx4.onrender.com/ai/ai-summary",
       { events },
       { withCredentials: true },
     );
