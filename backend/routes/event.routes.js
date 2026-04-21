@@ -4,8 +4,7 @@ const Event = require("../model/event")
 
 
 function generateEvents() {
-  const types = ["badge_swipe", "door_open", "fence_alert"];
-  
+  const types = ["badge_swipe", "door_open", "fence_alert","tresspassing"];
   return Array.from({ length: 10 }, (_, i) => ({
     type: types[Math.floor(Math.random() * types.length)],
     timestamp: new Date(Date.now() - i * 60000),

@@ -9,12 +9,12 @@ const path = events.slice(-5).map((e, i) => [
 ]);
   return (
     <>
-     <div>Mapview</div>
+     <div className="font-bold text-2xl p-2">Mapview</div>
 
      <MapContainer
       center={events.length>0 ? [events[0].location.lat,events[0].location.lng]:[12.97, 77.59]}
       zoom={15}
-      className="h-[500px] w-full rounded-lg"
+      className="h-[500px] w-full rounded-lg p-2"
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
