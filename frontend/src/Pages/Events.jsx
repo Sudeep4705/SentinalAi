@@ -152,10 +152,19 @@ export default function Events() {
                 className="bg-white border border-[#ece8e0] rounded-xl p-4 hover:shadow-md hover:border-[#c8d8be] transition-all duration-200"
               >
                 <div className="flex items-start justify-between mb-3">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-[#4a7c59] bg-[#eef5eb] px-2 py-0.5 rounded-full">
-                    {event.type}
-                  </span>
-                  <span className="text-[11px] text-[#bbb]">#{String(key + 1).padStart(2, "0")}</span>
+                  <div className="flex items-start justify-between mb-3">
+  <div className="flex items-center gap-2">
+    <span className="text-[11px] font-semibold uppercase tracking-wider text-[#4a7c59] bg-[#eef5eb] px-2 py-0.5 rounded-full">
+      {event.type}
+    </span>
+    {event.isNight && (
+      <span className="text-[10px] font-semibold text-red-400 bg-red-50 px-2 py-0.5 rounded-full">
+        🌙 Night
+      </span>
+    )}
+  </div>
+  <span className="text-[11px] text-[#bbb]">#{String(key + 1).padStart(2, "0")}</span>
+</div>
                 </div>
                <p className="text-[13px] text-[#555] mb-1">
   {new Date(event.timestamp).toLocaleString()}
