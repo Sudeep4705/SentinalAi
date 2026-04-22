@@ -89,6 +89,8 @@ Final answer must be ONLY this JSON with detailed sentences:
     res.json({ message: result || { whatHappened: "Could not complete", isSuspicious: "unknown", actionNeeded: "Manual review" } });
 
   } catch (err) {
+    console.log(err);
+    
     res.status(500).json({ error: err.message });
   }
 };
