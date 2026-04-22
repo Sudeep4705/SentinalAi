@@ -7,7 +7,6 @@ function generateEvents() {
   const base = new Date();
   base.setDate(base.getDate() - 1);
   base.setHours(23, 0, 0, 0); 
-
   return Array.from({ length: 10 }, (_, i) => ({
     type: types[Math.floor(Math.random() * types.length)],
     timestamp: new Date(base.getTime() + i * 60000),

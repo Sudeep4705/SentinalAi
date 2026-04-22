@@ -5,8 +5,11 @@ const tools = {
     return count;
   },
   findNightEvents: (events) => {
-    return events.filter((e) => new Date(e.timestamp).getHours() < 6);
-  },
+  return events.filter((e) => {
+    const hour = new Date(e.timestamp).getHours();
+    return hour >= 22 || hour < 6; 
+  });
+},
   getEventByZone: (events, zone) => events.filter((e) => e.zone === zone),
 
   flagForEscalation: (events) => {
@@ -25,18 +28,34 @@ module.exports.Aiprompt = async (req, res) => {
     const { events } = req.body;
 
     const messages = [
-      {
-        role: "system",
-        content: `You are a security analyst. You have these tools:
-- checkRepeatedEvents
-- findNightEvents  
-- getEventByZone
-- flagForEscalation
-- getFailedBadgeSwipes
+   {
+  role: "system",
+  content: `You are a security analyst investigating overnight events at an industrial site.
 
-To use a tool write: TOOL: toolName
-When done write ONLY JSON: { "whatHappened":"...", "isSuspicious":"yes/no because...", "actionNeeded":"...", "needsEscalation": true/false }`
-      },
+You have these tools:
+- checkRepeatedEvents → counts how many times each event type occurred
+- findNightEvents → finds events that happened between 12AM and 6AM
+- getEventByZone → filters events by zone
+- flagForEscalation → checks if situation needs escalation
+- getFailedBadgeSwipes → returns all failed badge swipe attempts
+
+To use a tool write exactly:
+TOOL: toolName
+
+Rules:
+- Always start by calling checkRepeatedEvents to understand what happened
+- Then call flagForEscalation to check severity
+- After using tools, give your final answer
+
+Final answer must be ONLY this JSON with detailed sentences:
+{
+  "whatHappened": "Write 2-3 sentences describing what happened overnight in detail",
+  "isSuspicious": "yes, because [explain clearly why] OR no, because [explain clearly why]",
+  "actionNeeded": "Write exactly what should be done next",
+  "needsEscalation": true or false,
+  "confidence": "high or medium or low"
+}`
+},
       {
         role: "user",
         content: `Investigate: ${JSON.stringify(events)}`
