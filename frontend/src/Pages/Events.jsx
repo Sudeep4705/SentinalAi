@@ -134,7 +134,7 @@ export default function Events() {
             </div>
             <div>
               <p className="text-[13px] font-semibold text-[#c47f00]">Drone Patrol Dispatched</p>
-              <p className="text-[12px] text-[#a07820] mt-0.5">Suspicious activity detected — aerial scan initiated</p>
+              <p className="text-[12px] text-[#a07820] mt-0.5">Suspicious activity detected  aerial scan initiated</p>
             </div>
           </motion.div>
         )}
