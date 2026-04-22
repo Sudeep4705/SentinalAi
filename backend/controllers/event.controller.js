@@ -4,9 +4,12 @@ const Event = require("../model/event")
 
 function generateEvents() {
   const types = ["BADGE_SWIPE", "DOOR_OPEN", "FENCE_ALERT", "TRESSPASSING"];
+
+
   const base = new Date();
   base.setDate(base.getDate() - 1);
-  base.setHours(23, 0, 0, 0); 
+  base.setUTCHours(17, 30, 0, 0); 
+
   return Array.from({ length: 10 }, (_, i) => ({
     type: types[Math.floor(Math.random() * types.length)],
     timestamp: new Date(base.getTime() + i * 60000),
