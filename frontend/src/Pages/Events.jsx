@@ -157,7 +157,9 @@ export default function Events() {
                   </span>
                   <span className="text-[11px] text-[#bbb]">#{String(key + 1).padStart(2, "0")}</span>
                 </div>
-                <p className="text-[13px] text-[#555] mb-1">{event.timestamp}</p>
+               <p className="text-[13px] text-[#555] mb-1">
+  {new Date(event.timestamp).toLocaleString()}
+</p>
                 {event.zone && (
                   <p className="text-[12px] text-[#4a7c59] font-medium mb-1">📍 {event.zone}</p>
                 )}
