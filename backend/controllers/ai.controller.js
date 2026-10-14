@@ -66,7 +66,7 @@ Final answer must be ONLY this JSON with detailed sentences:
 
     for (let i = 0; i < 5; i++) {
       const response = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages
       });
 
